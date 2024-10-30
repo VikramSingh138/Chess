@@ -1,0 +1,15 @@
+.vs/
+
+Debug/
+x64/
+
+*.user
+
+*.dll
+*.exe
+
+*.tmp
+
+*.log
+
+External/
