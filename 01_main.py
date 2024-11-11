@@ -67,9 +67,10 @@ def main():
                     if move in validMoves :     #check if Valid Move
                         g_state.make_Move(move) # making the move 
                         moveMade =True
-                    
-                    sqrSelected = () #reseting the player clicks after move is made
-                    playerClicks = []
+                        sqrSelected = () #reseting the player clicks after move is made
+                        playerClicks = []
+                    else :
+                        playerClicks = [sqrSelected]
 
             elif e.type == pg.KEYDOWN : 
                 if e.key == pg.K_z : # WHEN Z IS PRESSED 
