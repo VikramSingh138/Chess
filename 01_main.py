@@ -63,13 +63,15 @@ def main():
                     #second click done so now move
                     move = ChessEngine.Move(playerClicks[0] , playerClicks[1] , g_state.board)
                     print(move.getChessNotation())
-
-                    if move in validMoves :     #check if Valid Move
-                        g_state.make_Move(move) # making the move 
-                        moveMade =True
-                        sqrSelected = () #reseting the player clicks after move is made
-                        playerClicks = []
-                    else :
+                    
+                    for i in range(len(validMoves)) :
+                        if move == validMoves[i] :     #check if Valid Move
+                            g_state.make_Move(validMoves[i]) # making the move 
+                            moveMade =True
+                            sqrSelected = () #reseting the player clicks after move is made
+                            playerClicks = []
+                    
+                    if not moveMade :
                         playerClicks = [sqrSelected]
 
             elif e.type == pg.KEYDOWN : 
