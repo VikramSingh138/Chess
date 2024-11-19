@@ -37,6 +37,7 @@ class GameState():
         self.incheck = False
         self.pins = []
         self.checks = []
+        self.EnPassant_Possible = () #coords of possible enpassant move
 
     '''
     TAKES START AND END POSITIONS TO MAKE MOVE
@@ -55,6 +56,24 @@ class GameState():
 
         self.whitemove = not self.whitemove
 
+        if move.isPawnPromotion :
+            #make by default queen
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + "Q"
+
+        #En-Passant 
+        if move.isEnPassant : 
+            self.board[move.startRow][move.endCol] = "--" #captring enemy pawn
+        
+        if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2 :
+            self.EnPassant_Possible = ((move.startRow + move.endRow)//2 , move.startCol)
+        else :
+            self.EnPassant_Possible = ()
+
+
+    '''
+    Undoing the Previous Move made
+    '''
+
     def undo_Move(self) : 
         if len(self.movelogs) != 0 :  # Shouldn't be the first move to undo
             move = self.movelogs.pop() #storing the last move in this variable
@@ -68,6 +87,15 @@ class GameState():
                 self.BlackKing = (move.startRow , move.startCol)
 
             self.whitemove = not self.whitemove
+
+        if move.isEnPassant : 
+            self.board[move.endRow][move.endCol] = '--'
+            self.board[move.startRow][move.endCol] = move.pieceCaptured
+            self.EnPassant_Possible = (move.endRow , move.endCol)
+
+        #undo the 2 square pawn moved
+        if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2 :
+            self.EnPassant_Possible = ()
         
     '''
     All  moves considering checks
@@ -160,6 +188,9 @@ class GameState():
         #     moves = self.getPossibleMoves()
 
         # return moves
+
+        temp_Enpassant = self.EnPassant_Possible
+
         moves = []
         self.inCheck, self.pins, self.checks = self.CheckPinsAndChecks()  # Determine if the king is in check
 
@@ -219,6 +250,8 @@ class GameState():
         else:
             self.CheckMate = False
             self.StaleMate = False
+
+        self.EnPassant_Possible = temp_Enpassant
 
         return moves
 
@@ -393,12 +426,17 @@ class GameState():
                     #enemy piece to capture
                     if not piecePinned or pin_Direction == (-1 , -1) : 
                         moves.append(Move((row,col) , (row-1 , col-1) ,self.board))
+
+                elif (row -1 , col -1) == self.EnPassant_Possible :
+                    moves.append(Move((row,col) , (row-1 , col-1) ,self.board , isEnpassant =True))
                 
             if col+1 <= 7 :
                 if self.board[row-1][col+1][0] == 'b' :
                     #enemy piece to capture
                     if not piecePinned or pin_Direction == (-1 , 1) : 
                         moves.append(Move((row,col) , (row-1 , col+1) ,self.board))
+                elif (row -1 , col +1) == self.EnPassant_Possible :
+                    moves.append(Move((row,col) , (row-1 , col+1) ,self.board , isEnpassant =True))
 
         else :
             if self.board[row+1][col] == "--" :
@@ -412,11 +450,15 @@ class GameState():
                 if self.board[row+1][col-1][0] == 'w' :
                     if not piecePinned or pin_Direction == (1 , -1) : 
                         moves.append(Move((row,col) , (row+1 , col-1) ,self.board))
+                elif (row +1 , col -1) == self.EnPassant_Possible :
+                    moves.append(Move((row,col) , (row+1 , col-1) ,self.board , isEnpassant =True))
 
             if col+1 <= 7 :
                 if self.board[row+1][col+1][0] == 'w' :
                     if not piecePinned or pin_Direction == (1 , 1) : 
                         moves.append(Move((row,col) , (row+1 , col+1) ,self.board))
+                elif (row +1 , col +1) == self.EnPassant_Possible :
+                    moves.append(Move((row,col) , (row+1 , col+1) ,self.board , isEnpassant =True))
 
     '''
     ROOK MOVES
@@ -625,17 +667,28 @@ class Move():
     }
     #reverses the dictionary KEY , VAL pair to VAL , KEY pair 
 
-    def __init__(self , startsqr , endsqr , board ):
+    def __init__(self , startsqr , endsqr , board , isEnpassant = False):
         self.startRow = startsqr[0] 
         self.startCol = startsqr[1]
         self.endRow   = endsqr[0]
         self.endCol   = endsqr[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
+
+        self.isPawnPromotion = False
+        if (self.pieceMoved == 'wP' and self.endRow == 0 ) or (self.pieceMoved == 'bP' and self.endRow == 7 ):
+            #pawn reached opposite end of board
+            self.isPawnPromotion =True
+        
+        self.isEnPassant = isEnpassant
+        if self.isEnPassant:
+            self.pieceCaptured = 'wP' if self.pieceMoved == 'bP' else 'bP'
+
         self.MoveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
         # print(self.MoveID)
         ''' MOVE ID TO UNIQUELY IDENTIFY EACH 
             MOVE IN THE GAME STATE '''
+        
 
     def __eq__(self , other) :
         if isinstance(other , Move):
