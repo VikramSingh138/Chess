@@ -9,7 +9,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
-SQR = HEIGHT // DIMENSION # 8 x 8 square total to be made 
+SQR = HEIGHT // DIMENSION # 8 x 8 square total to be made z
 
 MAX_FPS = 15
 IMAGES = {}
@@ -42,51 +42,96 @@ def main():
                       #Keeps track of last click of the user
     playerClicks = [] #Keeps tracks of the Users Initial and final clicks
 
-    while running : 
-        for e in pg.event.get() : 
+    # while running : 
+    #     for e in pg.event.get() : 
+    #         if e.type == pg.QUIT:
+    #             running = False
+    #         elif e.type == pg.MOUSEBUTTONDOWN :
+    #             location = pg.mouse.get_pos() #x, y
+    #             col = location[0] // SQR
+    #             row = location[1] // SQR
+
+    #             if sqrSelected == (row , col) : 
+    #                 sqrSelected = ()
+    #                 #undoing the previous click if clicked twice on same sqr
+    #                 playerClicks = []
+    #             else:
+    #                 sqrSelected = (row ,col)
+    #                 playerClicks.append(sqrSelected) 
+    #                 #append for both first and second clicks
+    #             if len(playerClicks) == 2 : 
+    #                 #second click done so now move
+    #                 move = ChessEngine.Move(playerClicks[0] , playerClicks[1] , g_state.board)
+    #                 print(move.getChessNotation())
+                    
+    #                 for i in range(len(validMoves)) :
+    #                     if move == validMoves[i] :     #check if Valid Move
+    #                         g_state.make_Move(validMoves[i]) # making the move 
+    #                         moveMade =True
+    #                         sqrSelected = () #reseting the player clicks after move is made
+    #                         playerClicks = []
+                    
+    #                 if not moveMade :
+    #                     playerClicks = [sqrSelected]
+
+    #         elif e.type == pg.KEYDOWN : 
+    #             if e.key == pg.K_z : # WHEN Z IS PRESSED 
+    #                 g_state.undo_Move()
+    #                 moveMade =True
+
+    #         if moveMade :
+    #             validMoves = g_state.getValidMoves()
+    #             #new set of valid moves to be found after move is made
+    #             moveMade = False
+
+    #     draw_game_state(screen , g_state)
+    #     clock.tick(MAX_FPS)
+    #     pg.display.flip()
+    while running: 
+        for e in pg.event.get():
             if e.type == pg.QUIT:
                 running = False
-            elif e.type == pg.MOUSEBUTTONDOWN :
-                location = pg.mouse.get_pos() #x, y
+            elif e.type == pg.MOUSEBUTTONDOWN and not moveMade:
+                location = pg.mouse.get_pos()  # x, y
                 col = location[0] // SQR
                 row = location[1] // SQR
 
-                if sqrSelected == (row , col) : 
+                if sqrSelected == (row, col):
+                    # Undo the previous click if clicked twice on the same square
                     sqrSelected = ()
-                    #undoing the previous click if clicked twice on same sqr
                     playerClicks = []
                 else:
-                    sqrSelected = (row ,col)
-                    playerClicks.append(sqrSelected) 
-                    #append for both first and second clicks
-                if len(playerClicks) == 2 : 
-                    #second click done so now move
-                    move = ChessEngine.Move(playerClicks[0] , playerClicks[1] , g_state.board)
+                    sqrSelected = (row, col)
+                    playerClicks.append(sqrSelected)
+
+                if len(playerClicks) == 2:  # After second click
+                    move = ChessEngine.Move(playerClicks[0], playerClicks[1], g_state.board)
                     print(move.getChessNotation())
-                    
-                    for i in range(len(validMoves)) :
-                        if move == validMoves[i] :     #check if Valid Move
-                            g_state.make_Move(validMoves[i]) # making the move 
-                            moveMade =True
-                            sqrSelected = () #reseting the player clicks after move is made
+
+                    for validMove in validMoves:
+                        if move == validMove:
+                            g_state.make_Move(validMove)  # Make the move
+                            moveMade = True
+                            sqrSelected = ()
                             playerClicks = []
+                            break  # Prevent additional moves before toggling whitemove
                     
-                    if not moveMade :
+                    if not moveMade:
                         playerClicks = [sqrSelected]
 
-            elif e.type == pg.KEYDOWN : 
-                if e.key == pg.K_z : # WHEN Z IS PRESSED 
+            elif e.type == pg.KEYDOWN:
+                if e.key == pg.K_z:  # Undo move with "Z"
                     g_state.undo_Move()
-                    moveMade =True
+                    moveMade = True
 
-            if moveMade :
-                validMoves = g_state.getValidMoves()
-                #new set of valid moves to be found after move is made
-                moveMade = False
+        if moveMade:
+            validMoves = g_state.getValidMoves()  # Update valid moves
+            moveMade = False
 
-        draw_game_state(screen , g_state)
+        draw_game_state(screen, g_state)
         clock.tick(MAX_FPS)
         pg.display.flip()
+
 
 '''
 DRAWING THE GAME BOARD AND PIECES
