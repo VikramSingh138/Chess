@@ -129,6 +129,9 @@ class GameState():
                 self.board[move.endRow][move.endCol - 2] = self.board[move.endRow][move.endCol + 1]
                 self.board[move.endRow][move.endCol + 1] = '--'
 
+        self.CheckMate = False
+        self.StaleMate = False
+
     '''
     Funtion to keep track of Castlinng Rights
     '''
@@ -322,86 +325,6 @@ class GameState():
                     inCheck = True
                     checks.append((endRow , endCol , d[0] , d[1]))
         return inCheck , pins , checks
-
-    # def CheckPinsAndChecks(self):
-    #     """
-    #     Determines whether the current player is in check and identifies pins.
-    #     Returns:
-    #         inCheck (bool): Whether the king is in check.
-    #         pins (list): Pinned pieces with their directions.
-    #         checks (list): Pieces putting the king in check with their directions.
-    #     """
-    #     pins = []
-    #     checks = []
-    #     inCheck = False
-
-    #     if self.whitemove:
-    #         enemy_color = "b"
-    #         own_color = "w"
-    #         startRow, startCol = self.WhiteKing
-    #     else:
-    #         enemy_color = "w"
-    #         own_color = "b"
-    #         startRow, startCol = self.BlackKing
-
-    #     # Directions for rook/queen and bishop/queen
-    #     directions = [(-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
-
-    #     for j, d in enumerate(directions):
-    #         possiblePin = ()
-    #         for i in range(1, 8):  # Max range of a piece
-    #             endRow = startRow + d[0] * i
-    #             endCol = startCol + d[1] * i
-    #             if 0 <= endRow < 8 and 0 <= endCol < 8:
-    #                 endPiece = self.board[endRow][endCol]
-    #                 if endPiece[0] == own_color and endPiece[1] != "K":
-    #                     if possiblePin == ():  # First own piece in this direction
-    #                         possiblePin = (endRow, endCol, d[0], d[1])
-    #                     else:  # Second own piece blocks pin
-    #                         break
-    #                 elif endPiece[0] == enemy_color:
-    #                     type = endPiece[1]
-    #                     # Check for rook, bishop, or queen applying pin/check
-    #                     if (0 <= j <= 3 and type in ["R", "Q"]) or \
-    #                     (4 <= j <= 7 and type in ["B", "Q"]) or \
-    #                     (i == 1 and type == "K"):
-    #                         if possiblePin == ():  # No pin, so it's a check
-    #                             inCheck = True
-    #                             checks.append((endRow, endCol, d[0], d[1]))
-    #                         else:  # Pin found
-    #                             pins.append(possiblePin)
-    #                         break
-    #                     else:  # Enemy piece not applying check/pin
-    #                         break
-    #             else:  # Off the board
-    #                 break
-
-    #     # Check for knight checks
-    #     knight_moves = [
-    #         (-2, -1), (-2, 1), (-1, -2), (-1, 2),
-    #         (1, -2), (1, 2), (2, -1), (2, 1)
-    #     ]
-    #     for m in knight_moves:
-    #         endRow = startRow + m[0]
-    #         endCol = startCol + m[1]
-    #         if 0 <= endRow < 8 and 0 <= endCol < 8:
-    #             endPiece = self.board[endRow][endCol]
-    #             if endPiece[0] == enemy_color and endPiece[1] == "N":
-    #                 inCheck = True
-    #                 checks.append((endRow, endCol, m[0], m[1]))
-
-    #     # Check for pawn checks
-    #     pawn_dir = -1 if self.whitemove else 1
-    #     for pawn_col_offset in [-1, 1]:
-    #         endRow = startRow + pawn_dir
-    #         endCol = startCol + pawn_col_offset
-    #         if 0 <= endRow < 8 and 0 <= endCol < 8:
-    #             endPiece = self.board[endRow][endCol]
-    #             if endPiece[0] == enemy_color and endPiece[1] == "P":
-    #                 inCheck = True
-    #                 checks.append((endRow, endCol, pawn_dir, pawn_col_offset))
-
-    #     return inCheck, pins, checks
 
     '''
     CHECK FOR CHECKS IN CURRENT GAME STATE
@@ -772,6 +695,31 @@ class GameState():
             if self.board[row][col - 1] == '--' and self.board[row][col - 2] == '--' and self.board[row][col - 3] == '--':
                 if not self.square_under_attack(row, col - 1) and not self.square_under_attack(row, col - 2):
                     moves.append(Move((row, col), (row, col - 2), self.board, isCastle=True))
+
+    '''
+    DRAW BY INSUFFIECIENT MATERIAL
+    '''
+
+    def OnlyKingsLeft(self):
+        pieces = []  # List to store all non-empty pieces on the board
+
+        for row in self.board:
+            for square in row:
+                if square != "--":
+                    pieces.append(square)
+                    if len(pieces) > 3:  # More than three pieces means sufficient material
+                        return False
+
+        # Check for insufficient material
+        if len(pieces) == 2 and "wK" in pieces and "bK" in pieces:
+            return True  # Only kings left
+        elif len(pieces) == 3 and "wK" in pieces and "bK" in pieces:
+            # Check if the third piece is a knight
+            pieces.remove("wK")
+            pieces.remove("bK")
+            return pieces[0][1] == "N"  or pieces[0][1] == "B" # True if the third piece is a knight
+
+        return False  # Sufficient material
 
 '''
 CASTLING RIGHTS
